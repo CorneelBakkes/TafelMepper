@@ -1,0 +1,3893 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vliegenmepper Tafelspel - Tafels Oefenen op het Digibord</title>
+  <meta name="description" content="Digibord vliegenmepper-spel om de maaltafels in de klas te oefenen met fysieke meppers en kaarten." />
+  <meta property="og:title" content="Vliegenmepper Tafelspel - Tafels Oefenen op het Digibord" />
+  <meta property="og:description" content="Digibord vliegenmepper-spel om de maaltafels in de klas te oefenen met fysieke meppers en kaarten." />
+
+  <style>
+    /* ==========================================================================
+       1. CSS RESET & VARIABELEN (Geschikt voor Digibord & Hoge Contrasten)
+       ========================================================================== */
+    :root {
+      /* Primaire UI tinten */
+      --bg-main: #0f172a;          /* Donkere, rustige digibord achtergrond */
+      --bg-card: #1e293b;          /* Kaart achtergrond */
+      --bg-card-hover: #334155;    /* Interactieve kaart hover */
+      --text-main: #f8fafc;        /* Haarscherpe witte tekst */
+      --text-muted: #94a3b8;       /* Gedempte ondersteunende tekst */
+      --border-color: #334155;     /* Zachte randen */
+      
+      /* Spelerskleuren (Standaardkleuren uit opdracht: rood, blauw, groen, geel) */
+      --color-rood: #ef4444;
+      --color-rood-light: rgba(239, 68, 68, 0.2);
+      --color-blauw: #3b82f6;
+      --color-blauw-light: rgba(59, 130, 246, 0.2);
+      --color-groen: #22c55e;
+      --color-groen-light: rgba(34, 197, 94, 0.2);
+      --color-geel: #eab308;
+      --color-geel-light: rgba(234, 179, 8, 0.2);
+
+      /* Timerkleuren */
+      --timer-green: #22c55e;
+      --timer-orange: #f97316;
+      --timer-red: #ef4444;
+
+      /* Algemene actiekleur */
+      --accent-primary: #6366f1;
+      --accent-primary-hover: #4f46e5;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none; /* Voorkomt per ongeluk tekst selecteren op touchscreen */
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      line-height: 1.4;
+    }
+
+    /* ==========================================================================
+       2. HOOFDKOPPEN EN NAVIGATIE BALK
+       ========================================================================== */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      background-color: rgba(30, 41, 59, 0.75);
+      border-bottom: 2px solid var(--border-color);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+
+    .brand-badge {
+      font-size: 1.6rem;
+      display: inline-block;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    /* Grote, duidelijke digibord knoppen */
+    .icon-btn {
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      color: var(--text-main);
+      border-radius: 0.75rem;
+      padding: 0.6rem 1rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.15s ease-in-out;
+      min-height: 48px;
+    }
+
+    .icon-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: #475569;
+      transform: translateY(-1px);
+    }
+
+    .icon-btn:active {
+      transform: translateY(1px);
+    }
+
+    /* ==========================================================================
+       3. SCHERMSTRUCTUUR EN CONTAINERS
+       ========================================================================== */
+    .app-viewport {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    .screen {
+      display: none; /* Schermen worden getoond via JS class 'active' */
+      flex: 1;
+      flex-direction: column;
+      animation: fadeIn 0.25s ease-out;
+      width: 100%;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.99); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* ==========================================================================
+       4. SCHERM 1: INSTELLINGEN (STARTSCHERM)
+       ========================================================================== */
+    .settings-container {
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 1.5rem;
+      padding: 2rem;
+      margin: auto;
+      width: 100%;
+      max-width: 960px;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+
+    .settings-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .settings-header h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      color: #38bdf8;
+    }
+
+    .settings-header p {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+    }
+
+    .settings-section {
+      margin-bottom: 2rem;
+      padding-bottom: 1.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .settings-section:last-of-type {
+      border-bottom: none;
+      margin-bottom: 1rem;
+      padding-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-subtitle {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    /* Snelle actieknoppen voor tafels */
+    .quick-preset-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .preset-btn {
+      background: #0f172a;
+      border: 1px solid #475569;
+      color: #cbd5e1;
+      border-radius: 0.5rem;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .preset-btn:hover {
+      background: #1e293b;
+      color: #fff;
+      border-color: #64748b;
+    }
+
+    /* Tafels Grid (1 t/m 12) */
+    .tables-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 640px) {
+      .tables-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .table-checkbox-card {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .table-checkbox-card input[type="checkbox"] {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+      height: 0;
+      width: 0;
+    }
+
+    .table-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      border: 2px solid var(--border-color);
+      border-radius: 0.85rem;
+      padding: 0.85rem 0.5rem;
+      transition: all 0.15s ease-in-out;
+      min-height: 70px;
+    }
+
+    .table-tile .table-number {
+      font-size: 1.5rem;
+      font-weight: 800;
+    }
+
+    .table-tile .table-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .table-checkbox-card input:checked + .table-tile {
+      background: #312e81;
+      border-color: #818cf8;
+      color: #ffffff;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+    }
+
+    .table-checkbox-card input:checked + .table-tile .table-label {
+      color: #c7d2fe;
+    }
+
+    /* Vermenigvuldigers Keuzerondjes */
+    .options-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .options-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .option-card {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .option-card input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .option-tile {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      border: 2px solid var(--border-color);
+      border-radius: 0.85rem;
+      padding: 1rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      text-align: center;
+      transition: all 0.15s ease;
+      min-height: 60px;
+    }
+
+    .option-card input:checked + .option-tile {
+      background: #064e3b;
+      border-color: #34d399;
+      color: #ffffff;
+      box-shadow: 0 0 15px rgba(52, 211, 153, 0.3);
+    }
+
+    /* Speeltijd keuzes (3s, 5s, 8s, 10s) */
+    .timer-options-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 640px) {
+      .timer-options-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .timer-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      border: 2px solid var(--border-color);
+      border-radius: 0.85rem;
+      padding: 0.85rem 0.5rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      transition: all 0.15s ease;
+      min-height: 60px;
+    }
+
+    .option-card input:checked + .timer-tile {
+      background: #78350f;
+      border-color: #fbbf24;
+      color: #ffffff;
+      box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+    }
+
+    /* Aantal Spelers Knoppen */
+    .player-count-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .count-tile {
+      background: #0f172a;
+      border: 2px solid var(--border-color);
+      border-radius: 0.85rem;
+      padding: 0.75rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .player-count-card input:checked + .count-tile {
+      background: #1e3a8a;
+      border-color: #60a5fa;
+      color: #fff;
+    }
+
+    /* Speler configuratie rijen */
+    .player-config-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .player-config-row {
+      background: #0f172a;
+      border: 2px solid var(--border-color);
+      border-radius: 1rem;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .player-label-badge {
+      font-weight: 800;
+      font-size: 1.15rem;
+      min-width: 90px;
+    }
+
+    .player-name-input {
+      flex: 1;
+      min-width: 180px;
+      background: #1e293b;
+      border: 2px solid #475569;
+      border-radius: 0.6rem;
+      color: #fff;
+      padding: 0.6rem 1rem;
+      font-size: 1.15rem;
+      font-weight: 600;
+      outline: none;
+    }
+
+    .player-name-input:focus {
+      border-color: #818cf8;
+      background: #273549;
+    }
+
+    .color-picker-group {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+    }
+
+    .color-swatch-label {
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+
+    .color-swatch-label input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .swatch-circle {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .color-swatch-label input:checked + .swatch-circle {
+      border-color: #ffffff;
+      transform: scale(1.15);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+
+    .swatch-rood { background-color: var(--color-rood); }
+    .swatch-blauw { background-color: var(--color-blauw); }
+    .swatch-groen { background-color: var(--color-groen); }
+    .swatch-geel { background-color: var(--color-geel); }
+
+    /* Grote Startknop */
+    .start-game-btn-wrap {
+      margin-top: 2rem;
+      text-align: center;
+    }
+
+    .btn-start-game {
+      width: 100%;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 1rem;
+      padding: 1.3rem 2rem;
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.5);
+      transition: all 0.15s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .btn-start-game:hover {
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px -5px rgba(16, 185, 129, 0.6);
+    }
+
+    .btn-start-game:active {
+      transform: translateY(1px);
+    }
+
+    .validation-error {
+      color: #f87171;
+      font-size: 1.15rem;
+      font-weight: 700;
+      text-align: center;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    /* ==========================================================================
+       4B. ANTWOORDKAARTEN KIEZEN (FYSIEK SPEL)
+       ========================================================================== */
+    .cards-preview-section {
+      border: 2px solid #38bdf8 !important;
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.08) 0%, rgba(30, 41, 59, 0.9) 100%) !important;
+    }
+
+    .cards-count-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: #0284c7;
+      color: #ffffff;
+      font-size: 0.95rem;
+      font-weight: 800;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      letter-spacing: 0.02em;
+    }
+
+    .cards-count-badge.warning {
+      background: #b91c1c;
+      color: #fee2e2;
+    }
+
+    .cards-quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .quick-card-btn {
+      background: #1e293b;
+      border: 1px solid #38bdf8;
+      color: #e2e8f0;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s ease;
+    }
+
+    .quick-card-btn:hover {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: #38bdf8;
+      transform: translateY(-1px);
+    }
+
+    .custom-card-add-box {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-left: auto;
+    }
+
+    .custom-card-input {
+      width: 75px;
+      padding: 0.4rem 0.5rem;
+      background: #090e17;
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      color: #ffffff;
+      font-size: 0.95rem;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .custom-card-input:focus {
+      outline: none;
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+    }
+
+    .cards-control-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .cards-view-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: #0f172a;
+      padding: 0.3rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn.active {
+      background: #38bdf8;
+      color: #0f172a;
+    }
+
+    .tab-btn:hover:not(.active) {
+      color: #ffffff;
+    }
+
+    .cards-display-box {
+      background: #090e17;
+      border: 2px solid #1e293b;
+      border-radius: 1rem;
+      padding: 1.25rem;
+      min-height: 90px;
+    }
+
+    .answer-cards-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      align-items: center;
+    }
+
+    .answer-card-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 52px;
+      height: 52px;
+      padding: 0 0.55rem;
+      font-size: 1.35rem;
+      font-weight: 900;
+      border-radius: 0.65rem;
+      user-select: none;
+      cursor: pointer;
+      border: 2px solid #cbd5e1;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .answer-card-chip.selected {
+      background: #ffffff;
+      color: #0f172a;
+      border-color: #38bdf8;
+      box-shadow: 0 4px 10px rgba(56, 189, 248, 0.25);
+    }
+
+    .answer-card-chip.selected:hover {
+      transform: translateY(-2px) scale(1.06);
+      box-shadow: 0 6px 14px rgba(56, 189, 248, 0.45);
+      border-color: #0284c7;
+    }
+
+    .answer-card-chip.unselected {
+      background: #111827;
+      color: #64748b;
+      border: 2px dashed #334155;
+      box-shadow: none;
+      opacity: 0.45;
+      text-decoration: line-through;
+    }
+
+    .answer-card-chip.unselected:hover {
+      opacity: 0.85;
+      color: #cbd5e1;
+      border-color: #64748b;
+      text-decoration: none;
+      transform: scale(1.03);
+    }
+
+    .table-cards-group {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 0.85rem;
+      padding: 0.85rem 1.1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .table-cards-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .table-cards-group-header {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #38bdf8;
+      margin-bottom: 0.65rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .table-toggle-btn {
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #cbd5e1;
+      padding: 0.3rem 0.7rem;
+      border-radius: 0.45rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .table-toggle-btn:hover {
+      background: #334155;
+      color: #ffffff;
+      border-color: #38bdf8;
+    }
+
+    .cards-selection-hint {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.85rem;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .cards-status-pill {
+      background: #1e293b;
+      color: #38bdf8;
+      border: 2px solid #0284c7;
+      border-radius: 0.75rem;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.15s ease;
+    }
+
+    .cards-status-pill:hover {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    .modal-cards-content {
+      max-height: 70vh;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+      margin: 1.5rem 0;
+      text-align: left;
+    }
+
+    .btn-modal-close {
+      background: #334155;
+      border: 2px solid #64748b;
+      color: #ffffff;
+      padding: 0.9rem 2rem;
+      font-size: 1.25rem;
+      font-weight: 800;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      width: 100%;
+    }
+
+    .btn-modal-close:hover {
+      background: #475569;
+    }
+
+    /* ==========================================================================
+       5. SCHERM 2: SPEELSCHERM (DIGIBORD FOCUS)
+       ========================================================================== */
+    .game-screen-layout {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 0.5rem 0;
+      width: 100%;
+    }
+
+    /* Bovenaan: Timer en Ronde */
+    .game-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 1.25rem;
+      padding: 1rem 1.75rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .round-indicator {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .round-label {
+      font-size: 1rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .round-value {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #38bdf8;
+    }
+
+    .timer-container {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .timer-text-display {
+      font-size: 3.2rem;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      transition: color 0.2s ease;
+    }
+
+    /* Timer kleurencodes */
+    .timer-color-green { color: var(--timer-green); }
+    .timer-color-orange { color: var(--timer-orange); }
+    .timer-color-red { color: var(--timer-red); animation: pulseTimer 0.5s infinite alternate; }
+
+    @keyframes pulseTimer {
+      from { transform: scale(1); }
+      to { transform: scale(1.08); }
+    }
+
+    .timer-progress-bar-bg {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .timer-progress-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: var(--timer-green);
+      transition: width 0.08s linear, background-color 0.3s ease;
+    }
+
+    .early-judge-btn {
+      background: #334155;
+      color: #e2e8f0;
+      border: 2px solid #475569;
+      border-radius: 0.75rem;
+      padding: 0.6rem 1.2rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.15s ease;
+    }
+
+    .early-judge-btn:hover {
+      background: #475569;
+      border-color: #64748b;
+      color: #fff;
+    }
+
+    /* Midden: ZO GROOT MOGELIJKE SOM & AFTELLEN */
+    .sum-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+      border: 3px solid var(--border-color);
+      border-radius: 2rem;
+      padding: 2.5rem 1rem;
+      text-align: center;
+      box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.4);
+      position: relative;
+    }
+
+    /* Aftel-animatie vóór de som ("Tel eerst af") */
+    .pre-round-countdown {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      animation: popInSum 0.2s ease;
+    }
+
+    .countdown-badge {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.25rem;
+    }
+
+    .countdown-big-number {
+      font-size: clamp(7rem, 22vw, 14rem);
+      font-weight: 900;
+      color: #facc15;
+      line-height: 1;
+      text-shadow: 0 0 35px rgba(250, 204, 21, 0.5);
+      user-select: none;
+      animation: countdownTickAnim 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes countdownTickAnim {
+      0% { transform: scale(0.65); opacity: 0.4; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .countdown-subtext {
+      font-size: 1.35rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-top: 0.5rem;
+    }
+
+    .btn-skip-countdown {
+      margin-top: 1.25rem;
+      background: transparent;
+      border: 1px dashed #475569;
+      color: #94a3b8;
+      padding: 0.45rem 1rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-skip-countdown:hover {
+      border-color: #38bdf8;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    .active-sum-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .sum-display {
+      font-size: clamp(4.5rem, 14vw, 11rem);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      color: #ffffff;
+      text-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      line-height: 1.1;
+      animation: popInSum 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popInSum {
+      from { opacity: 0; transform: scale(0.85); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .sum-helper-hint {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #facc15;
+      background: rgba(234, 179, 8, 0.15);
+      border: 1px solid rgba(234, 179, 8, 0.4);
+      padding: 0.6rem 1.4rem;
+      border-radius: 9999px;
+      margin-top: 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Antwoord altijd duidelijk zichtbaar NA de som / tijdens beoordelen */
+    .revealed-answer-banner {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.25rem;
+      background: #090e17;
+      border: 3px solid #38bdf8;
+      border-radius: 1.5rem;
+      padding: 0.85rem 2.5rem;
+      box-shadow: 0 10px 30px rgba(56, 189, 248, 0.35);
+      animation: popInSum 0.25s ease-out;
+    }
+
+    .revealed-answer-text {
+      font-size: clamp(2.2rem, 6vw, 4.2rem);
+      font-weight: 900;
+      color: #38bdf8;
+      letter-spacing: 0.03em;
+    }
+
+    .revealed-answer-pill {
+      font-size: 1.15rem;
+      font-weight: 800;
+      padding: 0.4rem 1.1rem;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .revealed-answer-pill.on-table {
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid #22c55e;
+      color: #4ade80;
+    }
+
+    .revealed-answer-pill.off-table {
+      background: rgba(239, 68, 68, 0.25);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+    }
+
+    /* Fop-sommen checkbox in instellingen */
+    .trick-sums-toggle-box {
+      margin-top: 1rem;
+      background: #090e17;
+      border: 2px solid #334155;
+      border-radius: 1rem;
+      padding: 1rem 1.25rem;
+      transition: border-color 0.15s ease;
+    }
+
+    .trick-sums-toggle-box:hover {
+      border-color: #38bdf8;
+    }
+
+    .trick-sums-checkbox-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .trick-sums-checkbox-label input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      accent-color: #38bdf8;
+      cursor: pointer;
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+
+    .trick-sums-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .trick-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .trick-desc {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Onderin: LIVE SCOREBORD */
+    .scoreboard-container {
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 1.25rem;
+      padding: 1rem 1.5rem;
+    }
+
+    .scoreboard-title {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+
+    .scoreboard-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .player-score-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.25rem;
+      border-radius: 1rem;
+      background: #0f172a;
+      border: 2px solid var(--border-color);
+      transition: all 0.2s ease;
+    }
+
+    .score-card-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .player-color-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .player-score-name {
+      font-size: 1.4rem;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+
+    .player-score-points {
+      font-size: 2.2rem;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      padding-left: 0.75rem;
+    }
+
+    /* ==========================================================================
+       6. MODAL / OVERLAY: WIE WAS ALS EERSTE GOED?
+       ========================================================================== */
+    .judge-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    .judge-overlay.active {
+      display: flex;
+    }
+
+    .judge-modal {
+      background: #1e293b;
+      border: 3px solid #475569;
+      border-radius: 2rem;
+      width: 100%;
+      max-width: 850px;
+      padding: 2.5rem;
+      text-align: center;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+    }
+
+    .judge-question {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    .judge-subquestion {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+
+    .judge-buttons-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (max-width: 600px) {
+      .judge-buttons-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .btn-judge-player {
+      background: #0f172a;
+      border: 4px solid var(--border-color);
+      border-radius: 1.25rem;
+      padding: 1.5rem 1rem;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #ffffff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      transition: all 0.15s ease;
+      min-height: 90px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-judge-player:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .btn-judge-player:active {
+      transform: translateY(1px);
+    }
+
+    .btn-nobody {
+      width: 100%;
+      background: #334155;
+      border: 3px solid #64748b;
+      border-radius: 1.25rem;
+      color: #e2e8f0;
+      padding: 1.25rem;
+      font-size: 1.5rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      min-height: 70px;
+    }
+
+    .btn-nobody:hover {
+      background: #475569;
+      border-color: #94a3b8;
+      color: #fff;
+    }
+
+    .judge-sum-badge {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      background: #0f172a;
+      border: 2px solid var(--border-color);
+      border-radius: 1.25rem;
+      padding: 0.85rem 1.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .judge-sum-equation {
+      font-size: 2.6rem;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 0.03em;
+    }
+
+    .judge-status-pill {
+      font-size: 1.1rem;
+      font-weight: 800;
+      padding: 0.35rem 1.1rem;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .judge-status-pill.on-table {
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid rgba(34, 197, 94, 0.6);
+      color: #4ade80;
+    }
+
+    .judge-status-pill.off-table {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.7);
+      color: #f87171;
+      animation: pulseTimer 0.6s infinite alternate;
+    }
+
+    .btn-judge-good-restraint {
+      width: 100%;
+      background: #14532d;
+      border: 3px solid #22c55e;
+      border-radius: 1.25rem;
+      color: #dcfce7;
+      padding: 1.25rem;
+      font-size: 1.4rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      min-height: 70px;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+    }
+
+    .btn-judge-good-restraint:hover {
+      background: #166534;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(34, 197, 94, 0.35);
+    }
+
+    /* Knoppen voor verkeerd gemept / minpunt */
+    .judge-penalty-section {
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 2px dashed #334155;
+      text-align: left;
+    }
+
+    .judge-section-heading {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #f87171;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .penalty-buttons-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 600px) {
+      .penalty-buttons-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .btn-judge-penalty {
+      background: #1e1b24;
+      border: 2px solid #ef4444;
+      border-radius: 1rem;
+      color: #fca5a5;
+      padding: 0.85rem 1rem;
+      font-size: 1.15rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      transition: all 0.15s ease;
+      min-height: 54px;
+    }
+
+    .btn-judge-penalty:hover {
+      background: #450a0a;
+      border-color: #f87171;
+      color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(239, 68, 68, 0.35);
+    }
+
+    /* ==========================================================================
+       7. SCHERM 3: EINDSCHERM (NA 25 SOMMEN)
+       ========================================================================== */
+    .gameover-container {
+      background: var(--bg-card);
+      border: 3px solid var(--border-color);
+      border-radius: 2rem;
+      padding: 2.5rem 2rem;
+      margin: auto;
+      width: 100%;
+      max-width: 850px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      position: relative;
+      z-index: 20;
+    }
+
+    .gameover-title {
+      font-size: 1.5rem;
+      color: #38bdf8;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .winner-announcement {
+      font-size: clamp(2.2rem, 6vw, 3.8rem);
+      font-weight: 900;
+      color: #fbbf24;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+    }
+
+    .final-score-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      max-width: 550px;
+      margin: 0 auto 2.5rem auto;
+    }
+
+    .final-score-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.1rem 1.5rem;
+      border-radius: 1rem;
+      background: #0f172a;
+      border: 2px solid var(--border-color);
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+
+    .final-score-item.is-winner {
+      border-color: #f59e0b;
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.15) 0%, #0f172a 100%);
+    }
+
+    .final-score-item .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #334155;
+      font-size: 1.1rem;
+      margin-right: 0.75rem;
+    }
+
+    .final-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      .final-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .btn-replay-same {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      border: none;
+      border-radius: 1rem;
+      padding: 1.2rem;
+      font-size: 1.4rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-replay-same:hover {
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    }
+
+    .btn-new-game {
+      background: #334155;
+      color: #fff;
+      border: 2px solid #64748b;
+      border-radius: 1rem;
+      padding: 1.2rem;
+      font-size: 1.4rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn-new-game:hover {
+      background: #475569;
+    }
+
+    /* Confetti Canvas */
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Confetti Canvas voor het feestelijke eindscherm -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- ==========================================================================
+       TOP BAR (Navigatie, Digibord tools, Geluid & Fullscreen)
+       ========================================================================== -->
+  <header class="top-bar">
+    <div class="brand-title">
+      <span class="brand-badge" aria-hidden="true">🪰💥</span>
+      <span>Vliegenmepper Tafelspel</span>
+    </div>
+    <div class="header-actions">
+      <!-- Antwoordkaarten bekijken knop -->
+      <button id="btn-show-cards-top" class="icon-btn" onclick="openCardsModal()" title="Bekijk met welke antwoordkaarten gespeeld wordt" aria-label="Bekijk antwoordkaarten">
+        <span>🃏</span>
+        <span>Antwoordkaarten (<span id="topbar-cards-count">33</span>)</span>
+      </button>
+      <!-- Geluid toggle -->
+      <button id="btn-toggle-sound" class="icon-btn" title="Geluid aan of uit zetten" aria-label="Geluid schakelen">
+        <span id="sound-icon">🔊</span>
+        <span id="sound-label">Geluid Aan</span>
+      </button>
+      <!-- Volledig scherm toggle -->
+      <button id="btn-toggle-fullscreen" class="icon-btn" title="Volledig scherm voor digibord" aria-label="Volledig scherm">
+        <span id="fs-icon">⛶</span>
+        <span>Digibord Scherm</span>
+      </button>
+      <!-- Stop spel knop (alleen zichtbaar tijdens spel) -->
+      <button id="btn-quit-game" class="icon-btn" style="display: none;" title="Spel stoppen en naar instellingen gaan">
+        <span>⚙️</span>
+        <span>Instellingen</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="app-viewport">
+
+    <!-- ==========================================================================
+         SCHERM 1: STARTSCHERM (INSTELLINGEN)
+         ========================================================================== -->
+    <section id="screen-settings" class="screen active" aria-labelledby="settings-heading">
+      <div class="settings-container">
+        <div class="settings-header">
+          <h1 id="settings-heading">Spelinstellingen</h1>
+          <p>Kies de tafels, speeltijd en spelers voor het vliegenmepper-spel in de klas.</p>
+        </div>
+
+        <!-- 1. Welke tafels meedoen (1 t/m 12) -->
+        <div class="settings-section">
+          <div class="section-title">
+            <span>1. Welke tafels doen mee?</span>
+          </div>
+          <p class="section-subtitle">Kies minimaal één tafel.</p>
+          
+          <div class="quick-preset-bar">
+            <button type="button" class="preset-btn" onclick="setTablePreset('all')">Alles selecteren</button>
+            <button type="button" class="preset-btn" onclick="setTablePreset('1-5')">Tafels 1 t/m 5</button>
+            <button type="button" class="preset-btn" onclick="setTablePreset('1-10')">Tafels 1 t/m 10</button>
+            <button type="button" class="preset-btn" onclick="setTablePreset('none')">Deselecteer alles</button>
+          </div>
+
+          <div class="tables-grid">
+            <!-- Dynamisch gegenereerd of vaste checkboxes 1 t/m 12 -->
+            <!-- We tonen 1 t/m 12 als duidelijke kaarten -->
+            <label class="table-checkbox-card">
+              <input type="checkbox" name="table" value="1" checked>
+              <div class="table-tile">
+                <span class="table-number">1</span>
+                <span class="table-label">Tafel 1</span>
+              </div>
+            </label>
+            <label class="table-checkbox-card">
+              <input type="checkbox" name="table" value="2" checked>
+              <div class="table-tile">
+                <span class="table-number">2</span>
+                <span class="table-label">Tafel 2</span>
+              </div>
+            </label>
+            <label class="table-checkbox-card">
+              <input type="checkbox" name="table" value="3" checked>
+              <div class="table-tile">
+                <span class="table-number">3</span>
+                <span class="table-label">Tafel 3</span>
+              </div>
+            </label>
+            <label class="table-checkbox-card">
+              <input type="checkbox" name="table" value="4" checked>
+              <div class="table-tile">
+                <span class="table-number">4</span>
+                <span class="table-label">Tafel 4</span>
+              </div>
+            </label>
+            <label class="table-checkbox-card">
+              <input type="checkbox" name="table" value="5" checked>
+              <div class="table-tile">
+                <span class="table-number">5</span>
+                <span class="table-label">Tafel 5</span>
+              </div>
+            </label>
+            <label class="table-checkbox-card">
+              <input type="checkbox" name="table" value="6">
+              <div class="table-tile">
+                <span class="table-number">6</span>
+                <span class="table-label">Tafel 6</span>
+              </div>
+            </label>
+            <label class="table-checkbox-card">
+              <input type="checkbox" name="table" value="7">
+              <div class="table-tile">
+                <span class="table-number">7</span>
+                <span class="table-label">Tafel 7</span>
+              </div>
+            </label>
+            <label class="table-checkbox-card">
+              <input type="checkbox" name="table" value="8">
+              <div class="table-tile">
+                <span class="table-number">8</span>
+                <span class="table-label">Tafel 8</span>
+              </div>
+            </label>
+            <label class="table-checkbox-card">
+              <input type="checkbox" name="table" value="9">
+              <div class="table-tile">
+                <span class="table-number">9</span>
+                <span class="table-label">Tafel 9</span>
+              </div>
+            </label>
+            <label class="table-checkbox-card">
+              <input type="checkbox" name="table" value="10" checked>
+              <div class="table-tile">
+                <span class="table-number">10</span>
+                <span class="table-label">Tafel 10</span>
+              </div>
+            </label>
+            <label class="table-checkbox-card">
+              <input type="checkbox" name="table" value="11">
+              <div class="table-tile">
+                <span class="table-number">11</span>
+                <span class="table-label">Tafel 11</span>
+              </div>
+            </label>
+            <label class="table-checkbox-card">
+              <input type="checkbox" name="table" value="12">
+              <div class="table-tile">
+                <span class="table-number">12</span>
+                <span class="table-label">Tafel 12</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 2. Welke vermenigvuldigers gebruikt worden (1-5, 1-10, 1-12) -->
+        <div class="settings-section">
+          <div class="section-title">
+            <span>2. Welke vermenigvuldigers worden gebruikt?</span>
+          </div>
+          <div class="options-row">
+            <label class="option-card">
+              <input type="radio" name="multiplier-range" value="5">
+              <div class="option-tile">1 t/m 5</div>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="multiplier-range" value="10" checked>
+              <div class="option-tile">1 t/m 10</div>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="multiplier-range" value="12">
+              <div class="option-tile">1 t/m 12</div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 3. Welke antwoordkaarten liggen op tafel? (Kies kaarten die meedoen) -->
+        <div class="settings-section cards-preview-section">
+          <div class="section-title">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>🃏</span>
+              <span>3. Kies de antwoordkaarten (op tafel)</span>
+            </span>
+            <span id="settings-cards-count-badge" class="cards-count-badge">33 kaarten gekozen</span>
+          </div>
+          <p class="section-subtitle">
+            <strong>Klik op een kaart om deze aan of uit te zetten.</strong> Alleen sommen waarvan de uitkomst op tafel ligt worden gevraagd!
+          </p>
+
+          <!-- Snelle selectieknoppen & getal toevoegen -->
+          <div class="cards-quick-actions">
+            <button type="button" class="quick-card-btn" onclick="selectAllCards()">
+              <span>✅ Alles aan</span>
+            </button>
+            <button type="button" class="quick-card-btn" onclick="deselectAllCards()">
+              <span>❌ Alles uit</span>
+            </button>
+            <button type="button" class="quick-card-btn" onclick="selectRandomCards(10)" title="Kies willekeurig 10 kaarten">
+              <span>🎲 Willekeurig 10</span>
+            </button>
+            <button type="button" class="quick-card-btn" onclick="selectRandomCards(15)" title="Kies willekeurig 15 kaarten">
+              <span>🎲 Willekeurig 15</span>
+            </button>
+            <button type="button" class="quick-card-btn" onclick="selectRandomCards(20)" title="Kies willekeurig 20 kaarten">
+              <span>🎲 Willekeurig 20</span>
+            </button>
+
+            <!-- Aangepast getal toevoegen -->
+            <div class="custom-card-add-box">
+              <input type="number" id="custom-card-input" class="custom-card-input" placeholder="Nr." min="1" max="144" title="Typ een getal en druk op Enter of Toevoegen" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomCard();}">
+              <button type="button" class="quick-card-btn" onclick="addCustomCard()" title="Voeg getal toe als antwoordkaart">
+                <span>➕ Voeg toe</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="cards-control-toolbar">
+            <div class="cards-view-tabs">
+              <button type="button" class="tab-btn active" id="tab-all-cards" onclick="setCardsViewMode('all')">Alles op volgorde</button>
+              <button type="button" class="tab-btn" id="tab-group-cards" onclick="setCardsViewMode('grouped')">Per tafel gegroepeerd</button>
+            </div>
+            <button type="button" class="preset-btn" onclick="copyCardsList()" title="Kopieer alle gekozen getallen naar klembord">
+              <span id="copy-cards-icon">📋</span>
+              <span id="copy-cards-text">Kopieer gekozen getallen</span>
+            </button>
+          </div>
+
+          <!-- Dynamische weergave van de kaarten -->
+          <div id="settings-cards-container" class="cards-display-box">
+            <!-- Dynamisch gegenereerd door JavaScript -->
+          </div>
+
+          <div class="cards-selection-hint">
+            <span>💡 <em>Witte kaarten liggen op tafel en kunnen gevraagd worden. Doorgestreepte donkere kaarten doen niet mee.</em></span>
+          </div>
+
+          <!-- Fop-sommen (antwoord ligt niet op tafel) optie -->
+          <div class="trick-sums-toggle-box">
+            <label class="trick-sums-checkbox-label">
+              <input type="checkbox" id="include-trick-sums" checked>
+              <div class="trick-sums-content">
+                <span class="trick-title">
+                  <span>⚠️</span>
+                  <span>Ook sommen tonen waarvan de uitkomst NIET op tafel ligt</span>
+                </span>
+                <span class="trick-desc">
+                  Geeft ook fop-sommen waarvan de uitkomst niet op tafel ligt. <strong>Regel:</strong> Bij niet meppen krijgt iedereen een punt (+1). Bij mis of verkeerd meppen een minpunt (-1)!
+                </span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 4. Speeltijd & Aftellen per som -->
+        <div class="settings-section">
+          <div class="section-title">
+            <span>4. Speeltijd & Aftellen per som</span>
+          </div>
+
+          <!-- A. Aftellen vóór de som -->
+          <div style="margin-bottom: 1.25rem;">
+            <div style="font-size: 1.05rem; font-weight: 700; color: #38bdf8; margin-bottom: 0.6rem;">
+              ⏱️ Tel eerst af vóór elke som ("Klaar voor de start..."):
+            </div>
+            <div class="timer-options-grid">
+              <label class="option-card">
+                <input type="radio" name="pre-countdown" value="3" checked>
+                <div class="timer-tile">3 seconden</div>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="pre-countdown" value="2">
+                <div class="timer-tile">2 seconden</div>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="pre-countdown" value="1">
+                <div class="timer-tile">1 seconde</div>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="pre-countdown" value="0">
+                <div class="timer-tile">Direct tonen</div>
+              </label>
+            </div>
+          </div>
+
+          <!-- B. Speeltijd na tonen -->
+          <div>
+            <div style="font-size: 1.05rem; font-weight: 700; color: #38bdf8; margin-bottom: 0.6rem;">
+              🎯 Speeltijd na tonen som (meptijd):
+            </div>
+            <div class="timer-options-grid">
+              <label class="option-card">
+                <input type="radio" name="round-duration" value="3">
+                <div class="timer-tile">3 seconden</div>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="round-duration" value="5" checked>
+                <div class="timer-tile">5 seconden</div>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="round-duration" value="8">
+                <div class="timer-tile">8 seconden</div>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="round-duration" value="10">
+                <div class="timer-tile">10 seconden</div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Aantal spelers (1 t/m 4) en spelerinstellingen -->
+        <div class="settings-section">
+          <div class="section-title">
+            <span>5. Aantal spelers (1 t/m 4)</span>
+          </div>
+          <div class="player-count-selector">
+            <label class="player-count-card">
+              <input type="radio" name="player-count" value="1" onchange="renderPlayerInputs()">
+              <div class="count-tile">1 Speler</div>
+            </label>
+            <label class="player-count-card">
+              <input type="radio" name="player-count" value="2" checked onchange="renderPlayerInputs()">
+              <div class="count-tile">2 Spelers</div>
+            </label>
+            <label class="player-count-card">
+              <input type="radio" name="player-count" value="3" onchange="renderPlayerInputs()">
+              <div class="count-tile">3 Spelers</div>
+            </label>
+            <label class="player-count-card">
+              <input type="radio" name="player-count" value="4" onchange="renderPlayerInputs()">
+              <div class="count-tile">4 Spelers</div>
+            </label>
+          </div>
+
+          <!-- Spelers Namen & Kleuren Container -->
+          <div id="player-inputs-container" class="player-config-list">
+            <!-- Dynamisch gevuld door JS -->
+          </div>
+        </div>
+
+        <!-- Foutmelding weergave -->
+        <div id="settings-error" class="validation-error"></div>
+
+        <!-- Start Knop -->
+        <div class="start-game-btn-wrap">
+          <button type="button" class="btn-start-game" id="btn-start-game" onclick="handleStartGame()">
+            <span>🚀</span>
+            <span>Start Spel</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         SCHERM 2: SPEELSCHERM (SOM & LIVE SCOREBORD)
+         ========================================================================== -->
+    <section id="screen-game" class="screen" aria-labelledby="active-sum-title">
+      <div class="game-screen-layout">
+        
+        <!-- Bovenaan: Resterende tijd & Huidige ronde -->
+        <div class="game-top-bar">
+          <div class="round-indicator">
+            <span class="round-label">Huidige ronde</span>
+            <span class="round-value" id="round-counter-text">Ronde 1 / 25</span>
+          </div>
+
+          <!-- Welke kaarten liggen op tafel snelle weergave -->
+          <button type="button" class="cards-status-pill" onclick="openCardsModal()" title="Bekijk alle antwoordkaarten die op tafel liggen">
+            <span>🃏</span>
+            <span><strong id="game-cards-count-text">33</strong> kaarten op tafel</span>
+          </button>
+
+          <div class="timer-container">
+            <div id="timer-number" class="timer-text-display timer-color-green">5s</div>
+            <button type="button" class="early-judge-btn" id="btn-early-judge" onclick="openJudgeModal()" title="Direct beoordelen als er al gemept is">
+              <span>⚡</span>
+              <span>Nu beoordelen</span>
+            </button>
+          </div>
+
+          <!-- Aftellende gekleurde progressiebalk -->
+          <div class="timer-progress-bar-bg">
+            <div id="timer-progress-bar" class="timer-progress-bar-fill"></div>
+          </div>
+        </div>
+
+        <!-- Midden: Aftel-fase ("Tel eerst af") & Somweergave ("dan laten zien en weer aftellen") -->
+        <div class="sum-stage" id="sum-stage-box">
+          <!-- Aftelweergave vóór de som -->
+          <div id="pre-round-countdown-wrap" class="pre-round-countdown" style="display: none;">
+            <div class="countdown-badge">Klaar voor de start...</div>
+            <div id="countdown-number" class="countdown-big-number">3</div>
+            <div class="countdown-subtext">Kijk goed naar het bord!</div>
+            <button type="button" class="btn-skip-countdown" onclick="skipPreCountdown()">Sla aftellen over ⏭️</button>
+          </div>
+
+          <!-- Actieve som (zichtbaar na aftellen) -->
+          <div id="active-sum-wrap" class="active-sum-wrap">
+            <h2 id="active-sum-title" class="sum-display">7 × 8</h2>
+            
+            <!-- Antwoordbanner die altijd NA de som / tijdens beoordeling wordt getoond -->
+            <div id="revealed-answer-banner" class="revealed-answer-banner" style="display: none;">
+              <span id="revealed-answer-text" class="revealed-answer-text">= 56</span>
+              <span id="revealed-answer-pill" class="revealed-answer-pill on-table">✅ Ligt op tafel</span>
+            </div>
+
+            <div class="sum-helper-hint">
+              <span>🎯</span>
+              <span id="sum-helper-text">Mep alleen als de uitkomst op tafel ligt!</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onderin: Live scorebord -->
+        <div class="scoreboard-container">
+          <div class="scoreboard-title">Live Scorebord</div>
+          <div id="scoreboard-cards-wrap" class="scoreboard-cards">
+            <!-- Dynamische spelerskaarten via JS -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         SCHERM 3: EINDSCHERM (NA 25 SOMMEN)
+         ========================================================================== -->
+    <section id="screen-gameover" class="screen" aria-labelledby="gameover-heading">
+      <div class="gameover-container">
+        <div class="gameover-title">Gefeliciteerd! Alle 25 sommen zijn gespeeld!</div>
+        <div id="winner-announcement-text" class="winner-announcement">🏆 Winnaar: Lisa!</div>
+
+        <!-- Scorelijst gerangschikt -->
+        <div id="final-score-list-wrap" class="final-score-list">
+          <!-- Dynamisch gegenereerd -->
+        </div>
+
+        <!-- Knoppen nieuw spel of herstart -->
+        <div class="final-actions">
+          <button type="button" class="btn-replay-same" onclick="restartSameSettings()">
+            <span>🔄</span>
+            <span>Zelfde instellingen opnieuw</span>
+          </button>
+          <button type="button" class="btn-new-game" onclick="goToSettings()">
+            <span>⚙️</span>
+            <span>Nieuw spel instellen</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================================
+       MODAL: WIE WAS ALS EERSTE GOED?
+       ========================================================================== -->
+  <div id="modal-judge" class="judge-overlay" role="dialog" aria-modal="true" aria-labelledby="judge-title">
+    <div class="judge-modal">
+      <!-- Som & Status Badge (Ligt op tafel of FOP-SOM) -->
+      <div id="judge-sum-summary" class="judge-sum-badge">
+        <span id="judge-sum-equation" class="judge-sum-equation">7 × 8 = 56</span>
+        <span id="judge-table-status-pill" class="judge-status-pill on-table">✅ Ligt op tafel</span>
+      </div>
+
+      <h2 id="judge-title" class="judge-question">Wie was als eerste goed?</h2>
+      <p id="judge-subquestion" class="judge-subquestion">Klik op de speler die als eerste het juiste antwoord heeft gemept.</p>
+
+      <div id="judge-players-grid" class="judge-buttons-grid">
+        <!-- Dynamische grote speler-knoppen via JS -->
+      </div>
+
+      <div id="judge-extra-actions">
+        <!-- Dynamische actieknoppen voor op tafel / fop-sommen -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL: WELKE ANTWOORDKAARTEN LIGGEN OP TAFEL?
+       ========================================================================== -->
+  <div id="modal-cards" class="judge-overlay" role="dialog" aria-modal="true" aria-labelledby="cards-modal-heading">
+    <div class="judge-modal" style="max-width: 920px; text-align: left; padding: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+        <h2 id="cards-modal-heading" class="judge-question" style="font-size: 2.2rem; margin-bottom: 0; text-align: left;">
+          🃏 Antwoordkaarten op tafel
+        </h2>
+        <span id="modal-cards-count-badge" class="cards-count-badge" style="font-size: 1.1rem; padding: 0.4rem 1.1rem;">
+          33 kaarten gekozen
+        </span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 1.15rem; margin-bottom: 1.25rem;">
+        Dit zijn de actieve fysieke antwoordkaarten die op tafel liggen voor <span id="modal-tables-summary" style="color: #38bdf8; font-weight: 700;"></span> (1 t/m <span id="modal-mult-summary" style="color: #38bdf8; font-weight: 700;">10</span>). Klik op een kaart om deze alsnog aan of uit te zetten:
+      </p>
+
+      <div class="cards-quick-actions">
+        <button type="button" class="quick-card-btn" onclick="selectAllCards()">
+          <span>✅ Alles aan</span>
+        </button>
+        <button type="button" class="quick-card-btn" onclick="deselectAllCards()">
+          <span>❌ Alles uit</span>
+        </button>
+        <button type="button" class="quick-card-btn" onclick="selectRandomCards(10)" title="Kies willekeurig 10 kaarten">
+          <span>🎲 Willekeurig 10</span>
+        </button>
+        <button type="button" class="quick-card-btn" onclick="selectRandomCards(15)" title="Kies willekeurig 15 kaarten">
+          <span>🎲 Willekeurig 15</span>
+        </button>
+      </div>
+
+      <div class="cards-control-toolbar">
+        <div class="cards-view-tabs">
+          <button type="button" class="tab-btn active" id="modal-tab-all" onclick="setCardsViewMode('all')">Alles op volgorde</button>
+          <button type="button" class="tab-btn" id="modal-tab-grouped" onclick="setCardsViewMode('grouped')">Per tafel gegroepeerd</button>
+        </div>
+        <button type="button" class="preset-btn" onclick="copyCardsList()" title="Kopieer alle gekozen getallen naar klembord">
+          <span id="modal-copy-cards-icon">📋</span>
+          <span id="modal-copy-cards-text">Kopieer gekozen getallen</span>
+        </button>
+      </div>
+
+      <div id="modal-cards-container" class="cards-display-box modal-cards-content">
+        <!-- Dynamisch gevuld via JS -->
+      </div>
+
+      <button type="button" class="btn-modal-close" onclick="closeCardsModal()">
+        <span>✓ Sluiten en doorgaan</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       8. JAVASCRIPT: SPEL-LOGICA, AUDIO & VISUELE TIMERS (100% STANDALONE)
+       ========================================================================== -->
+  <script>
+    /**
+     * @file Vliegenmepper Tafelspel voor het Digibord
+     * @description Complete standalone single-page applicatie zonder externe afhankelijkheden.
+     */
+
+    // ========================================================================
+    // CONSTANTEN & GLOBALE STATE
+    // ========================================================================
+    const TOTAL_ROUNDS = 25; // Precies 25 sommen per spel
+
+    // Standaard kleurenpalette
+    const COLOR_CONFIG = {
+      rood:  { name: 'Rood',  hex: '#ef4444', light: 'rgba(239, 68, 68, 0.25)', border: '#dc2626' },
+      blauw: { name: 'Blauw', hex: '#3b82f6', light: 'rgba(59, 130, 246, 0.25)', border: '#2563eb' },
+      groen: { name: 'Groen', hex: '#22c55e', light: 'rgba(34, 197, 94, 0.25)', border: '#16a34a' },
+      geel:  { name: 'Geel',  hex: '#eab308', light: 'rgba(234, 179, 8, 0.25)', border: '#ca8a04' }
+    };
+
+    const DEFAULT_NAMES = ['Jan', 'Lisa', 'Piet', 'Saar'];
+    const DEFAULT_COLORS = ['rood', 'blauw', 'groen', 'geel'];
+
+    // Huidige spelconfiguratie
+    let gameConfig = {
+      selectedTables: [1, 2, 3, 4, 5, 10],
+      multiplierMax: 10,
+      roundSeconds: 5,
+      players: [
+        { id: 1, name: 'Jan', color: 'rood', score: 0 },
+        { id: 2, name: 'Lisa', color: 'blauw', score: 0 }
+      ]
+    };
+
+    // Huidige loop/ronde state
+    let gameState = {
+      currentRound: 0,
+      activeSum: { table: 0, multiplier: 0, text: '', product: 0, isOnTable: true },
+      previousSumText: '',
+      previousWasOffTable: false,
+      remainingMs: 0,
+      totalRoundMs: 5000,
+      timerInterval: null,
+      preCountdownInterval: null,
+      preCountdownTimeout: null,
+      isTimerPaused: false,
+      isJudging: false,
+      soundEnabled: true
+    };
+
+    // ========================================================================
+    // NATIVE WEB AUDIO API SYNTHESIZER (Geen externe audiobestanden nodig)
+    // ========================================================================
+    let audioCtx = null;
+
+    /**
+     * Initialiseert of hervat de AudioContext na gebruikersinteractie.
+     */
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    /**
+     * Speelt een heldere afteltoon vóór de som (3, 2, 1, START).
+     */
+    function soundCountdownTick(num) {
+      if (!gameState.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        let freq = 440; // A4 (bij 3)
+        if (num === 2) freq = 554.37; // C#5 (bij 2)
+        else if (num === 1) freq = 659.25; // E5 (bij 1)
+        else if (num <= 0) freq = 880; // A5 (start!)
+
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + (num <= 0 ? 0.35 : 0.16));
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + (num <= 0 ? 0.35 : 0.16));
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    /**
+     * Speelt een korte frisse pieptoon bij het verschijnen van een nieuwe som.
+     */
+    function soundNewSum() {
+      if (!gameState.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, now); // D5
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.12); // A5
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    /**
+     * Speelt een zachte aftel-tik voor de laatste seconden van de timer.
+     */
+    function soundTick() {
+      if (!gameState.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(900, now);
+
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.06);
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    /**
+     * Speelt een zoemertoon wanneer de timer afloopt en het mep-beoordelingsscherm opent.
+     */
+    function soundTimeUp() {
+      if (!gameState.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(240, now + 0.25);
+
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.3);
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    /**
+     * Speelt een opgewekt akkoord wanneer een speler een punt krijgt.
+     */
+    function soundPointAwarded() {
+      if (!gameState.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C - E - G - C
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+
+          gain.gain.setValueAtTime(0.2, now + idx * 0.06);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.2);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now + idx * 0.06);
+          osc.stop(now + idx * 0.06 + 0.2);
+        });
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    /**
+     * Speelt een lagere 'boem / fout' zoemer bij mis-meppen of verkeerd meppen (minpunt).
+     */
+    function soundPenalty() {
+      if (!gameState.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(260, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.35);
+
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.35);
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    /**
+     * Speelt een dubbel jubelend akkoord wanneer beide spelers een punt verdienen (fop-som beheersing).
+     */
+    function soundBothPoints() {
+      if (!gameState.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+
+        const notes = [440, 554.37, 659.25, 880, 1108.73]; // A - C# - E - A - C#
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+
+          gain.gain.setValueAtTime(0.18, now + idx * 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.25);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now + idx * 0.05);
+          osc.stop(now + idx * 0.05 + 0.25);
+        });
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    /**
+     * Speelt een feestelijke fanfare bij het eindscherm.
+     */
+    function soundFanfare() {
+      if (!gameState.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const melody = [
+          { f: 523.25, d: 0.15 }, // C
+          { f: 659.25, d: 0.15 }, // E
+          { f: 783.99, d: 0.15 }, // G
+          { f: 1046.50, d: 0.45 } // C hoog
+        ];
+
+        let offset = 0;
+        melody.forEach(note => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(note.f, now + offset);
+          gain.gain.setValueAtTime(0.25, now + offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + note.d);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + offset);
+          osc.stop(now + offset + note.d);
+          offset += note.d * 0.85;
+        });
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    // ========================================================================
+    // INSTELLINGEN LOGICA & SNELTOETSEN VOOR TAFELS
+    // ========================================================================
+
+    /**
+     * Past vooraf ingestelde selecties toe op de tafels 1 t/m 12.
+     * @param {'all' | '1-5' | '1-10' | 'none'} preset 
+     */
+    function setTablePreset(preset) {
+      const checkboxes = document.querySelectorAll('input[name="table"]');
+      checkboxes.forEach(cb => {
+        const val = parseInt(cb.value, 10);
+        if (preset === 'all') {
+          cb.checked = true;
+        } else if (preset === '1-5') {
+          cb.checked = (val >= 1 && val <= 5);
+        } else if (preset === '1-10') {
+          cb.checked = (val >= 1 && val <= 10);
+        } else if (preset === 'none') {
+          cb.checked = false;
+        }
+      });
+      hasUserManuallyCustomized = false;
+      hideError();
+      syncCardsSelection();
+      updateAnswerCardsDisplay();
+    }
+
+    /**
+     * Rendert de invoervelden en kleurknoppen voor het geselecteerde aantal spelers (1 t/m 4).
+     */
+    function renderPlayerInputs() {
+      const countInput = document.querySelector('input[name="player-count"]:checked');
+      const count = countInput ? parseInt(countInput.value, 10) : 2;
+      const container = document.getElementById('player-inputs-container');
+      if (!container) return;
+
+      container.innerHTML = '';
+
+      for (let i = 0; i < count; i++) {
+        const pIndex = i + 1;
+        const defaultName = DEFAULT_NAMES[i] || `Speler ${pIndex}`;
+        const defaultColor = DEFAULT_COLORS[i] || 'rood';
+
+        const row = document.createElement('div');
+        row.className = 'player-config-row';
+        row.innerHTML = `
+          <span class="player-label-badge" style="color: ${COLOR_CONFIG[defaultColor].hex};">
+            Speler ${pIndex}
+          </span>
+          <input 
+            type="text" 
+            class="player-name-input" 
+            id="player-name-${pIndex}" 
+            value="${defaultName}" 
+            placeholder="Naam speler ${pIndex}" 
+            maxlength="15"
+          >
+          <div class="color-picker-group">
+            ${['rood', 'blauw', 'groen', 'geel'].map(colorKey => `
+              <label class="color-swatch-label" title="${COLOR_CONFIG[colorKey].name}">
+                <input 
+                  type="radio" 
+                  name="player-color-${pIndex}" 
+                  value="${colorKey}" 
+                  ${colorKey === defaultColor ? 'checked' : ''}
+                  onchange="updatePlayerColorPreview(${pIndex}, '${colorKey}')"
+                >
+                <div class="swatch-circle swatch-${colorKey}"></div>
+              </label>
+            `).join('')}
+          </div>
+        `;
+        container.appendChild(row);
+      }
+    }
+
+    /**
+     * Werkt de kleurindicatie in de speler-configuratie bij na het kiezen van een kleur.
+     */
+    function updatePlayerColorPreview(playerIndex, colorKey) {
+      const badge = document.querySelector(`#player-inputs-container .player-config-row:nth-child(${playerIndex}) .player-label-badge`);
+      if (badge && COLOR_CONFIG[colorKey]) {
+        badge.style.color = COLOR_CONFIG[colorKey].hex;
+      }
+    }
+
+    /**
+     * Toont een foutmelding op het instellingenscherm.
+     */
+    function showError(msg) {
+      const errEl = document.getElementById('settings-error');
+      if (errEl) {
+        errEl.textContent = msg;
+        errEl.style.display = 'block';
+      }
+    }
+
+    /**
+     * Verbergt de foutmelding op het instellingenscherm.
+     */
+    function hideError() {
+      const errEl = document.getElementById('settings-error');
+      if (errEl) {
+        errEl.textContent = '';
+        errEl.style.display = 'none';
+      }
+    }
+
+    // ========================================================================
+    // ANTWOORDKAARTEN LOGICA (KIEZEN VOOR OP TAFEL)
+    // ========================================================================
+    let cardsViewMode = 'all'; // 'all' of 'grouped'
+    const selectedCardsSet = new Set(); // Kaarten die daadwerkelijk meedoen / op tafel liggen
+    const customCardsSet = new Set();   // Handmatig toegevoegde getallen door de leerkracht
+    let hasUserManuallyCustomized = false; // Of de leerkracht handmatig kaarten heeft gewijzigd
+
+    /**
+     * Berekent alle unieke antwoordkaarten en kaarten per tafel voor de gegeven configuratie,
+     * inclusief eventuele handmatig toegevoegde getalkaarten.
+     * @param {number[]} tables 
+     * @param {number} maxMultiplier 
+     */
+    function getRequiredAnswerCards(tables, maxMultiplier) {
+      const uniqueCardsSet = new Set();
+      const byTable = {};
+
+      tables.forEach(t => {
+        byTable[t] = [];
+        for (let m = 1; m <= maxMultiplier; m++) {
+          const product = t * m;
+          uniqueCardsSet.add(product);
+          if (!byTable[t].includes(product)) {
+            byTable[t].push(product);
+          }
+        }
+        byTable[t].sort((a, b) => a - b);
+      });
+
+      // Voeg ook eventuele handmatige kaarten toe aan het totaal
+      customCardsSet.forEach(num => {
+        uniqueCardsSet.add(num);
+      });
+
+      const uniqueCards = Array.from(uniqueCardsSet).sort((a, b) => a - b);
+      return { uniqueCards, byTable, tables, maxMultiplier };
+    }
+
+    /**
+     * Haalt de huidige tafels en vermenigvuldiger op (tijdens spel of instellingen).
+     */
+    function getCurrentCardConfig() {
+      const gameScreen = document.getElementById('screen-game');
+      // Als we in het spel zitten, gebruik de actieve gameConfig
+      if (gameScreen && gameScreen.classList.contains('active') && gameConfig.selectedTables) {
+        return {
+          tables: gameConfig.selectedTables.length > 0 ? gameConfig.selectedTables : [1],
+          multiplierMax: gameConfig.multiplierMax || 10
+        };
+      }
+
+      // Anders lees van de instellingenpagina
+      const checkedBoxes = document.querySelectorAll('input[name="table"]:checked');
+      let tables = Array.from(checkedBoxes).map(cb => parseInt(cb.value, 10));
+      if (tables.length === 0) {
+        tables = [];
+      }
+
+      const multInput = document.querySelector('input[name="multiplier-range"]:checked');
+      const multiplierMax = multInput ? parseInt(multInput.value, 10) : 10;
+
+      return { tables, multiplierMax };
+    }
+
+    /**
+     * Synchroniseert de geselecteerde kaarten wanneer tafels of vermenigvuldigers wijzigen.
+     */
+    function syncCardsSelection() {
+      const config = getCurrentCardConfig();
+      const cardsData = getRequiredAnswerCards(config.tables, config.multiplierMax);
+
+      if (!hasUserManuallyCustomized) {
+        // Standaard: alle geldige kaarten zijn geselecteerd
+        selectedCardsSet.clear();
+        cardsData.uniqueCards.forEach(num => selectedCardsSet.add(num));
+      } else {
+        // Als de gebruiker zelf kaarten heeft gekozen, zorg dat kaarten die helemaal nergens meer bij horen worden opgeruimd
+        const validPool = new Set(cardsData.uniqueCards);
+        for (const num of selectedCardsSet) {
+          if (!validPool.has(num)) {
+            selectedCardsSet.delete(num);
+          }
+        }
+      }
+    }
+
+    /**
+     * Schakelt een specifieke kaart aan of uit.
+     * @param {number} num 
+     */
+    function toggleCardSelection(num) {
+      num = parseInt(num, 10);
+      hasUserManuallyCustomized = true;
+
+      if (selectedCardsSet.has(num)) {
+        selectedCardsSet.delete(num);
+      } else {
+        selectedCardsSet.add(num);
+      }
+
+      hideError();
+      updateAnswerCardsDisplay();
+    }
+
+    /**
+     * Selecteert alle beschikbare antwoordkaarten.
+     */
+    function selectAllCards() {
+      hasUserManuallyCustomized = true;
+      const config = getCurrentCardConfig();
+      const cardsData = getRequiredAnswerCards(config.tables, config.multiplierMax);
+      cardsData.uniqueCards.forEach(num => selectedCardsSet.add(num));
+
+      hideError();
+      updateAnswerCardsDisplay();
+    }
+
+    /**
+     * Deselecteert alle antwoordkaarten.
+     */
+    function deselectAllCards() {
+      hasUserManuallyCustomized = true;
+      selectedCardsSet.clear();
+
+      hideError();
+      updateAnswerCardsDisplay();
+    }
+
+    /**
+     * Selecteert willekeurig een specifiek aantal kaarten uit de beschikbare pool.
+     * @param {number} count 
+     */
+    function selectRandomCards(count) {
+      hasUserManuallyCustomized = true;
+      const config = getCurrentCardConfig();
+      const cardsData = getRequiredAnswerCards(config.tables, config.multiplierMax);
+      const pool = [...cardsData.uniqueCards];
+      if (pool.length === 0) return;
+
+      // Shuffle
+      const shuffled = [...pool].sort(() => 0.5 - Math.random());
+      selectedCardsSet.clear();
+      shuffled.slice(0, Math.min(count, pool.length)).forEach(num => selectedCardsSet.add(num));
+
+      hideError();
+      updateAnswerCardsDisplay();
+    }
+
+    /**
+     * Voegt een aangepast getal toe aan de kaartenpool en activeert deze direct.
+     */
+    function addCustomCard() {
+      const input = document.getElementById('custom-card-input');
+      if (!input) return;
+      const val = parseInt(input.value.trim(), 10);
+      if (!isNaN(val) && val > 0 && val <= 144) {
+        customCardsSet.add(val);
+        selectedCardsSet.add(val);
+        hasUserManuallyCustomized = true;
+        input.value = '';
+        hideError();
+        updateAnswerCardsDisplay();
+      }
+    }
+
+    /**
+     * Schakelt alle kaarten van een specifieke tafel aan of uit.
+     * @param {number} tableNum 
+     */
+    function toggleTableCards(tableNum) {
+      hasUserManuallyCustomized = true;
+      const config = getCurrentCardConfig();
+      const cardsData = getRequiredAnswerCards(config.tables, config.multiplierMax);
+      const tableCards = cardsData.byTable[tableNum] || [];
+      if (tableCards.length === 0) return;
+
+      const allActive = tableCards.every(num => selectedCardsSet.has(num));
+      tableCards.forEach(num => {
+        if (allActive) {
+          selectedCardsSet.delete(num);
+        } else {
+          selectedCardsSet.add(num);
+        }
+      });
+
+      hideError();
+      updateAnswerCardsDisplay();
+    }
+
+    /**
+     * Rendert de antwoordkaarten chips in HTML.
+     */
+    function renderCardChipsHTML(cardsData, mode) {
+      if (cardsData.uniqueCards.length === 0) {
+        return '<p style="color:#f87171; font-size:1.15rem; font-weight:700; padding:0.5rem 0;">⚠️ Geen tafels geselecteerd. Vink hierboven minimaal één tafel aan.</p>';
+      }
+
+      if (mode === 'all') {
+        return `
+          <div class="answer-cards-grid">
+            ${cardsData.uniqueCards.map(num => {
+              const isSelected = selectedCardsSet.has(num);
+              return `
+                <button type="button" 
+                  class="answer-card-chip ${isSelected ? 'selected' : 'unselected'}" 
+                  onclick="toggleCardSelection(${num})" 
+                  title="${isSelected ? `Kaart ${num} ligt op tafel (klik om uit te zetten)` : `Kaart ${num} doet niet mee (klik om aan te zetten)`}"
+                  aria-pressed="${isSelected}">
+                  <span>${num}</span>
+                </button>
+              `;
+            }).join('')}
+          </div>
+        `;
+      } else {
+        // Gegroepeerd per tafel
+        const sortedTables = [...cardsData.tables].sort((a, b) => a - b);
+        return sortedTables.map(t => {
+          const cards = cardsData.byTable[t] || [];
+          const activeCount = cards.filter(num => selectedCardsSet.has(num)).length;
+          const allActive = cards.length > 0 && activeCount === cards.length;
+
+          return `
+            <div class="table-cards-group">
+              <div class="table-cards-group-header">
+                <span>Tafel van ${t} (1 t/m ${cardsData.maxMultiplier})</span>
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                  <span style="font-size:0.95rem; color:var(--text-muted); font-weight:600;">${activeCount}/${cards.length} gekozen</span>
+                  <button type="button" class="table-toggle-btn" onclick="toggleTableCards(${t})">
+                    ${allActive ? 'Tafel uitzetten' : 'Tafel aanzetten'}
+                  </button>
+                </div>
+              </div>
+              <div class="answer-cards-grid">
+                ${cards.map(num => {
+                  const isSelected = selectedCardsSet.has(num);
+                  return `
+                    <button type="button" 
+                      class="answer-card-chip ${isSelected ? 'selected' : 'unselected'}" 
+                      onclick="toggleCardSelection(${num})" 
+                      title="${isSelected ? `Kaart ${num} ligt op tafel (klik om uit te zetten)` : `Kaart ${num} doet niet mee (klik om aan te zetten)`}"
+                      aria-pressed="${isSelected}">
+                      <span>${num}</span>
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    /**
+     * Werkt alle weergaven van de antwoordkaarten bij in de UI.
+     */
+    function updateAnswerCardsDisplay() {
+      const config = getCurrentCardConfig();
+      const cardsData = getRequiredAnswerCards(config.tables, config.multiplierMax);
+      const totalPool = cardsData.uniqueCards.length;
+      const selectedCount = selectedCardsSet.size;
+
+      // 1. Badges bijwerken
+      const settingsBadge = document.getElementById('settings-cards-count-badge');
+      if (settingsBadge) {
+        if (selectedCount === 0) {
+          settingsBadge.textContent = '⚠️ 0 gekozen';
+          settingsBadge.classList.add('warning');
+        } else {
+          settingsBadge.textContent = `${selectedCount} van ${totalPool} gekozen`;
+          settingsBadge.classList.remove('warning');
+        }
+      }
+
+      const topbarCount = document.getElementById('topbar-cards-count');
+      if (topbarCount) topbarCount.textContent = selectedCount;
+
+      const gameCountText = document.getElementById('game-cards-count-text');
+      if (gameCountText) gameCountText.textContent = selectedCount;
+
+      const modalBadge = document.getElementById('modal-cards-count-badge');
+      if (modalBadge) {
+        modalBadge.textContent = `${selectedCount} van ${totalPool} gekozen`;
+        if (selectedCount === 0) modalBadge.classList.add('warning');
+        else modalBadge.classList.remove('warning');
+      }
+
+      const modalTables = document.getElementById('modal-tables-summary');
+      if (modalTables) {
+        modalTables.textContent = config.tables.length > 0 
+          ? `tafel ${[...config.tables].sort((a,b)=>a-b).join(', ')}`
+          : 'geen tafels';
+      }
+
+      const modalMult = document.getElementById('modal-mult-summary');
+      if (modalMult) modalMult.textContent = config.multiplierMax;
+
+      // 2. Instellingen container vullen
+      const settingsBox = document.getElementById('settings-cards-container');
+      if (settingsBox) {
+        settingsBox.innerHTML = renderCardChipsHTML(cardsData, cardsViewMode);
+      }
+
+      // 3. Modal container vullen
+      const modalBox = document.getElementById('modal-cards-container');
+      if (modalBox) {
+        modalBox.innerHTML = renderCardChipsHTML(cardsData, cardsViewMode);
+      }
+    }
+
+    /**
+     * Schakelt de weergavemodus voor de antwoordkaarten (alles vs gegroepeerd).
+     * @param {'all' | 'grouped'} mode 
+     */
+    function setCardsViewMode(mode) {
+      cardsViewMode = mode;
+
+      const isAll = (mode === 'all');
+      // Tabs in instellingen
+      const tabAll = document.getElementById('tab-all-cards');
+      const tabGroup = document.getElementById('tab-group-cards');
+      if (tabAll) tabAll.classList.toggle('active', isAll);
+      if (tabGroup) tabGroup.classList.toggle('active', !isAll);
+
+      // Tabs in modal
+      const modalTabAll = document.getElementById('modal-tab-all');
+      const modalTabGroup = document.getElementById('modal-tab-grouped');
+      if (modalTabAll) modalTabAll.classList.toggle('active', isAll);
+      if (modalTabGroup) modalTabGroup.classList.toggle('active', !isAll);
+
+      updateAnswerCardsDisplay();
+    }
+
+    /**
+     * Opent de modal met het overzicht van alle antwoordkaarten.
+     */
+    function openCardsModal() {
+      // Als we in het spel zitten en de timer loopt, pauzeer deze tijdelijk
+      if (document.getElementById('screen-game').classList.contains('active') && !gameState.isJudging) {
+        gameState.isTimerPaused = true;
+      }
+
+      updateAnswerCardsDisplay();
+      const modal = document.getElementById('modal-cards');
+      if (modal) modal.classList.add('active');
+    }
+
+    /**
+     * Sluit de antwoordkaarten modal.
+     */
+    function closeCardsModal() {
+      const modal = document.getElementById('modal-cards');
+      if (modal) modal.classList.remove('active');
+
+      // Hervat eventuele timer als we in spelmodus zijn en er geen beoordeling actief is
+      if (document.getElementById('screen-game').classList.contains('active')) {
+        const judgeModal = document.getElementById('modal-judge');
+        if (!judgeModal || !judgeModal.classList.contains('active')) {
+          gameState.isTimerPaused = false;
+        }
+      }
+    }
+
+    /**
+     * Kopieert de lijst met geselecteerde getalkaarten naar het klembord van de leerkracht.
+     */
+    function copyCardsList() {
+      const list = Array.from(selectedCardsSet).sort((a, b) => a - b);
+      if (list.length === 0) return;
+      const textToCopy = list.join(', ');
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          showCopyFeedback();
+        }).catch(() => {
+          fallbackCopyText(textToCopy);
+        });
+      } else {
+        fallbackCopyText(textToCopy);
+      }
+    }
+
+    function fallbackCopyText(text) {
+      const tempInput = document.createElement('textarea');
+      tempInput.value = text;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      try {
+        document.execCommand('copy');
+        showCopyFeedback();
+      } catch (err) {
+        console.warn('Kon niet kopiëren:', err);
+      }
+      document.body.removeChild(tempInput);
+    }
+
+    function showCopyFeedback() {
+      const copyTextEl = document.getElementById('copy-cards-text');
+      const copyIconEl = document.getElementById('copy-cards-icon');
+      const modalCopyTextEl = document.getElementById('modal-copy-cards-text');
+      const modalCopyIconEl = document.getElementById('modal-copy-cards-icon');
+
+      if (copyTextEl) copyTextEl.textContent = '✓ Gekopieerd!';
+      if (copyIconEl) copyIconEl.textContent = '✅';
+      if (modalCopyTextEl) modalCopyTextEl.textContent = '✓ Gekopieerd!';
+      if (modalCopyIconEl) modalCopyIconEl.textContent = '✅';
+
+      setTimeout(() => {
+        if (copyTextEl) copyTextEl.textContent = 'Kopieer gekozen getallen';
+        if (copyIconEl) copyIconEl.textContent = '📋';
+        if (modalCopyTextEl) modalCopyTextEl.textContent = 'Kopieer gekozen getallen';
+        if (modalCopyIconEl) modalCopyIconEl.textContent = '📋';
+      }, 2200);
+    }
+
+    /**
+     * Leest en valideert de gekozen instellingen en start het spel.
+     */
+    function handleStartGame() {
+      hideError();
+
+      // 1. Controleer geselecteerde tafels (minimaal 1 verplicht)
+      const selectedTableCheckboxes = document.querySelectorAll('input[name="table"]:checked');
+      const tables = Array.from(selectedTableCheckboxes).map(cb => parseInt(cb.value, 10));
+
+      if (tables.length === 0) {
+        showError('⚠️ Selecteer minimaal één tafel om te oefenen.');
+        return;
+      }
+
+      // 2. Controleer geselecteerde antwoordkaarten (minimaal 1 verplicht)
+      if (selectedCardsSet.size === 0) {
+        showError('⚠️ Selecteer minimaal 1 antwoordkaart die op tafel ligt.');
+        const cardsSec = document.querySelector('.cards-preview-section');
+        if (cardsSec) cardsSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      // 3. Vermenigvuldigers
+      const multInput = document.querySelector('input[name="multiplier-range"]:checked');
+      const multiplierMax = multInput ? parseInt(multInput.value, 10) : 10;
+
+      // 4. Optie: ook fop-sommen geven waarvan de uitkomst NIET op tafel ligt
+      const trickCheckbox = document.getElementById('include-trick-sums');
+      const includeTrickSums = trickCheckbox ? trickCheckbox.checked : true;
+
+      // 5. Stel de lijsten samen: sommen die wél op tafel liggen, en sommen die níét op tafel liggen
+      const onTableSums = [];
+      const offTableSums = [];
+
+      tables.forEach(t => {
+        for (let m = 1; m <= multiplierMax; m++) {
+          const product = t * m;
+          const sumObj = {
+            table: t,
+            multiplier: m,
+            product: product,
+            text: `${t} × ${m}`,
+            isOnTable: selectedCardsSet.has(product)
+          };
+          if (selectedCardsSet.has(product)) {
+            onTableSums.push(sumObj);
+          } else {
+            offTableSums.push(sumObj);
+          }
+        }
+      });
+
+      // Als de leerkracht handmatig een getal heeft toegevoegd dat nog geen som had:
+      selectedCardsSet.forEach(cardNum => {
+        const hasExisting = onTableSums.some(s => s.product === cardNum);
+        if (!hasExisting) {
+          for (let a = 1; a <= 12; a++) {
+            if (cardNum % a === 0) {
+              const b = cardNum / a;
+              if (b >= 1 && b <= 12) {
+                onTableSums.push({
+                  table: a,
+                  multiplier: b,
+                  product: cardNum,
+                  text: `${a} × ${b}`,
+                  isOnTable: true
+                });
+              }
+            }
+          }
+        }
+      });
+
+      // Als de gebruiker fop-sommen wil, maar toevallig álle sommen van de gekozen tafels al op tafel liggen:
+      // Vul de fop-sommen aan met sommen uit nabijgelegen tafels die NIET op tafel liggen!
+      if (includeTrickSums && offTableSums.length < 5) {
+        for (let t = 1; t <= 12; t++) {
+          for (let m = 1; m <= multiplierMax; m++) {
+            const prod = t * m;
+            if (!selectedCardsSet.has(prod)) {
+              offTableSums.push({
+                table: t,
+                multiplier: m,
+                product: prod,
+                text: `${t} × ${m}`,
+                isOnTable: false
+              });
+            }
+          }
+        }
+      }
+
+      if (onTableSums.length === 0) {
+        showError('⚠️ Geen geldige sommen gevonden voor de gekozen kaarten en tafels. Selecteer extra kaarten of tafels.');
+        return;
+      }
+
+      // 6. Afteltijd vóór de som (3, 2, 1, 0)
+      const preCountdownInput = document.querySelector('input[name="pre-countdown"]:checked');
+      const preCountdownSeconds = preCountdownInput ? parseInt(preCountdownInput.value, 10) : 3;
+
+      // 7. Speeltijd per som (3, 5, 8, 10)
+      const durationInput = document.querySelector('input[name="round-duration"]:checked');
+      const roundSeconds = durationInput ? parseInt(durationInput.value, 10) : 5;
+
+      // 8. Spelers
+      const countInput = document.querySelector('input[name="player-count"]:checked');
+      const playerCount = countInput ? parseInt(countInput.value, 10) : 2;
+
+      const players = [];
+      for (let i = 1; i <= playerCount; i++) {
+        const nameInput = document.getElementById(`player-name-${i}`);
+        const nameVal = nameInput ? nameInput.value.trim() : '';
+        const name = nameVal || `Speler ${i}`;
+
+        const colorInput = document.querySelector(`input[name="player-color-${i}"]:checked`);
+        const color = colorInput ? colorInput.value : DEFAULT_COLORS[i - 1];
+
+        players.push({
+          id: i,
+          name: name,
+          color: color,
+          score: 0
+        });
+      }
+
+      // Sla configuratie op
+      gameConfig = {
+        selectedTables: tables,
+        multiplierMax: multiplierMax,
+        preCountdownSeconds: preCountdownSeconds,
+        roundSeconds: roundSeconds,
+        includeTrickSums: includeTrickSums,
+        players: players,
+        selectedCards: Array.from(selectedCardsSet),
+        onTableSums: onTableSums,
+        offTableSums: offTableSums
+      };
+
+      // Start de audiolus met een initieel gebruikersklik-event
+      getAudioContext();
+
+      // Start het spel
+      startNewGameSession();
+    }
+
+    // ========================================================================
+    // SPELCYCLUS & SOMMEN GENERATIE
+    // ========================================================================
+
+    /**
+     * Start een gloednieuwe sessie van 25 sommen.
+     */
+    function startNewGameSession() {
+      // Reset spelerscores
+      gameConfig.players.forEach(p => p.score = 0);
+
+      // Reset spellus
+      clearPreCountdown();
+      clearInterval(gameState.timerInterval);
+      gameState.currentRound = 0;
+      gameState.previousSumText = '';
+      gameState.previousWasOffTable = false;
+      gameState.totalRoundMs = gameConfig.roundSeconds * 1000;
+
+      // Schakel schermen
+      showScreen('screen-game');
+      document.getElementById('btn-quit-game').style.display = 'inline-flex';
+
+      // Update live scorebord en kaarten
+      renderLiveScoreboard();
+      updateAnswerCardsDisplay();
+
+      // Start eerste som
+      nextRound();
+    }
+
+    /**
+     * Schakelt tussen de actieve schermen (instellingen, spel, eindscherm).
+     */
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById(screenId);
+      if (target) target.classList.add('active');
+
+      if (screenId === 'screen-settings') {
+        document.getElementById('btn-quit-game').style.display = 'none';
+        stopConfetti();
+      }
+    }
+
+    /**
+     * Genereert een willekeurige som.
+     * Houdt rekening met fop-sommen (uitkomsten die NIET op tafel liggen).
+     */
+    function generateNextSum() {
+      const onTablePool = (gameConfig.onTableSums && gameConfig.onTableSums.length > 0)
+        ? gameConfig.onTableSums
+        : [{ table: 1, multiplier: 1, product: 1, text: '1 × 1', isOnTable: true }];
+
+      const offTablePool = (gameConfig.offTableSums && gameConfig.offTableSums.length > 0)
+        ? gameConfig.offTableSums
+        : [];
+
+      // Bepaal of deze ronde een fop-som (niet op tafel) moet zijn
+      // Vuistregels: niet in ronde 1, nooit twee keer achter elkaar, en ongeveer 25% kans
+      let pickOffTable = false;
+      if (gameConfig.includeTrickSums && offTablePool.length > 0 && gameState.currentRound > 1 && !gameState.previousWasOffTable) {
+        if (Math.random() < 0.25) {
+          pickOffTable = true;
+        }
+      }
+
+      const pool = pickOffTable ? offTablePool : onTablePool;
+      let chosen;
+      let attempts = 0;
+
+      if (pool.length === 1) {
+        chosen = pool[0];
+      } else {
+        do {
+          chosen = pool[Math.floor(Math.random() * pool.length)];
+          attempts++;
+        } while (chosen.text === gameState.previousSumText && attempts < 25);
+      }
+
+      gameState.previousSumText = chosen.text;
+      gameState.previousWasOffTable = !chosen.isOnTable;
+
+      return {
+        table: chosen.table,
+        multiplier: chosen.multiplier,
+        text: chosen.text,
+        product: chosen.product,
+        isOnTable: chosen.isOnTable
+      };
+    }
+
+    /**
+     * Stopt alle actieve pre-round countdown timers.
+     */
+    function clearPreCountdown() {
+      if (gameState.preCountdownInterval) {
+        clearInterval(gameState.preCountdownInterval);
+        gameState.preCountdownInterval = null;
+      }
+      if (gameState.preCountdownTimeout) {
+        clearTimeout(gameState.preCountdownTimeout);
+        gameState.preCountdownTimeout = null;
+      }
+    }
+
+    /**
+     * Start de volgende ronde:
+     * 1. Tel eerst af (indien ingesteld)
+     * 2. Laat de som zien
+     * 3. Start de meptimer
+     */
+    function nextRound() {
+      // Sluit eventuele open modal
+      closeJudgeModal();
+      clearPreCountdown();
+      clearInterval(gameState.timerInterval);
+
+      gameState.currentRound++;
+
+      // Controleer of alle 25 sommen zijn afgerond
+      if (gameState.currentRound > TOTAL_ROUNDS) {
+        endGame();
+        return;
+      }
+
+      // Genereer de nieuwe som
+      const newSum = generateNextSum();
+      gameState.activeSum = newSum;
+
+      // Update teller
+      document.getElementById('round-counter-text').textContent = `Som ${gameState.currentRound} van ${TOTAL_ROUNDS}`;
+
+      // Aftelfase vóór de som ("Tel vervolgens eerst af, dan laten zien en weer aftellen")
+      const preSeconds = gameConfig.preCountdownSeconds || 0;
+      if (preSeconds > 0) {
+        startPreRoundCountdown(preSeconds);
+      } else {
+        revealSumAndStartTimer();
+      }
+    }
+
+    /**
+     * Aftelfase vóórdat de som in beeld verschijnt ("3... 2... 1...").
+     * @param {number} seconds 
+     */
+    function startPreRoundCountdown(seconds) {
+      clearPreCountdown();
+      clearInterval(gameState.timerInterval);
+
+      const countdownWrap = document.getElementById('pre-round-countdown-wrap');
+      const activeSumWrap = document.getElementById('active-sum-wrap');
+      const countdownNumber = document.getElementById('countdown-number');
+      const timerNumberEl = document.getElementById('timer-number');
+      const progressBarEl = document.getElementById('timer-progress-bar');
+      const earlyJudgeBtn = document.getElementById('btn-early-judge');
+
+      if (countdownWrap) countdownWrap.style.display = 'flex';
+      if (activeSumWrap) activeSumWrap.style.display = 'none';
+
+      if (timerNumberEl) {
+        timerNumberEl.textContent = '...';
+        timerNumberEl.className = 'timer-text-display timer-color-green';
+      }
+      if (progressBarEl) {
+        progressBarEl.style.width = '100%';
+        progressBarEl.style.backgroundColor = 'var(--timer-green)';
+      }
+      if (earlyJudgeBtn) {
+        earlyJudgeBtn.style.opacity = '0.4';
+        earlyJudgeBtn.style.pointerEvents = 'none';
+      }
+
+      let count = seconds;
+      if (countdownNumber) {
+        countdownNumber.textContent = count;
+      }
+      soundCountdownTick(count);
+
+      gameState.preCountdownInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          if (countdownNumber) {
+            countdownNumber.textContent = count;
+            // Trigger animatie
+            countdownNumber.style.animation = 'none';
+            countdownNumber.offsetHeight;
+            countdownNumber.style.animation = null;
+          }
+          soundCountdownTick(count);
+        } else {
+          clearPreCountdown();
+          revealSumAndStartTimer();
+        }
+      }, 1000);
+    }
+
+    /**
+     * Slaat het aftellen direct over en toont meteen de som.
+     */
+    function skipPreCountdown() {
+      clearPreCountdown();
+      revealSumAndStartTimer();
+    }
+
+    /**
+     * Toont de som in grote letters en start het aftellen van de speeltijd.
+     */
+    function revealSumAndStartTimer() {
+      clearPreCountdown();
+
+      const countdownWrap = document.getElementById('pre-round-countdown-wrap');
+      const activeSumWrap = document.getElementById('active-sum-wrap');
+      const activeSumTitle = document.getElementById('active-sum-title');
+      const helperText = document.getElementById('sum-helper-text');
+      const earlyJudgeBtn = document.getElementById('btn-early-judge');
+      const revealedBanner = document.getElementById('revealed-answer-banner');
+
+      if (countdownWrap) countdownWrap.style.display = 'none';
+      if (activeSumWrap) activeSumWrap.style.display = 'flex';
+      if (activeSumTitle) activeSumTitle.textContent = gameState.activeSum.text;
+      if (revealedBanner) revealedBanner.style.display = 'none'; // Verberg antwoord tijdens het meppen
+
+      if (helperText) {
+        if (gameConfig.includeTrickSums) {
+          helperText.textContent = 'Mep alleen als de uitkomst op tafel ligt!';
+        } else {
+          helperText.textContent = 'Mep zo snel mogelijk op het antwoord!';
+        }
+      }
+
+      if (earlyJudgeBtn) {
+        earlyJudgeBtn.style.opacity = '1';
+        earlyJudgeBtn.style.pointerEvents = 'auto';
+      }
+
+      // Speel korte starttoon
+      soundNewSum();
+
+      // Start aftellen van de meptimer
+      startTimer();
+    }
+
+    /**
+     * Start het aftellen van de speeltijd per som ("weer aftellen").
+     */
+    function startTimer() {
+      clearInterval(gameState.timerInterval);
+      gameState.remainingMs = gameState.totalRoundMs;
+      gameState.isTimerPaused = false;
+
+      updateTimerDisplay();
+
+      const intervalStep = 50; // Update elke 50ms voor vloeiende balk
+      let lastSecondSound = Math.ceil(gameState.remainingMs / 1000);
+
+      gameState.timerInterval = setInterval(() => {
+        if (gameState.isTimerPaused) return;
+
+        gameState.remainingMs -= intervalStep;
+
+        // Geluidstik in de laatste 2 seconden
+        const currentSec = Math.ceil(gameState.remainingMs / 1000);
+        if (currentSec !== lastSecondSound && currentSec <= 2 && currentSec > 0) {
+          soundTick();
+          lastSecondSound = currentSec;
+        }
+
+        if (gameState.remainingMs <= 0) {
+          clearInterval(gameState.timerInterval);
+          gameState.remainingMs = 0;
+          updateTimerDisplay();
+          soundTimeUp();
+          openJudgeModal();
+        } else {
+          updateTimerDisplay();
+        }
+      }, intervalStep);
+    }
+
+    /**
+     * Werkt de grote cijfertimer en gekleurde progressiebalk bij.
+     * Kleuren: Groen (ruim de tijd) -> Oranje (< 50%) -> Rood (laatste 1-2 sec).
+     */
+    function updateTimerDisplay() {
+      const timerNumberEl = document.getElementById('timer-number');
+      const progressBarEl = document.getElementById('timer-progress-bar');
+      if (!timerNumberEl || !progressBarEl) return;
+
+      const secondsRemaining = Math.max(0, Math.ceil(gameState.remainingMs / 1000));
+      const percentage = Math.max(0, (gameState.remainingMs / gameState.totalRoundMs) * 100);
+
+      timerNumberEl.textContent = `${secondsRemaining}s`;
+      progressBarEl.style.width = `${percentage}%`;
+
+      // Verwijder oude klassen
+      timerNumberEl.classList.remove('timer-color-green', 'timer-color-orange', 'timer-color-red');
+
+      // Kleurverdeling
+      if (percentage > 45) {
+        timerNumberEl.classList.add('timer-color-green');
+        progressBarEl.style.backgroundColor = 'var(--timer-green)';
+      } else if (percentage > 20) {
+        timerNumberEl.classList.add('timer-color-orange');
+        progressBarEl.style.backgroundColor = 'var(--timer-orange)';
+      } else {
+        timerNumberEl.classList.add('timer-color-red');
+        progressBarEl.style.backgroundColor = 'var(--timer-red)';
+      }
+    }
+
+    /**
+     * Rendert de spelerskaarten op het speelscherm met actuele punten.
+     */
+    function renderLiveScoreboard() {
+      const container = document.getElementById('scoreboard-cards-wrap');
+      if (!container) return;
+
+      container.innerHTML = '';
+      gameConfig.players.forEach(player => {
+        const color = COLOR_CONFIG[player.color] || COLOR_CONFIG.rood;
+        const card = document.createElement('div');
+        card.className = 'player-score-card';
+        card.style.borderColor = color.border;
+        card.style.backgroundColor = color.light;
+
+        card.innerHTML = `
+          <div class="score-card-left">
+            <span class="player-color-dot" style="background-color: ${color.hex};"></span>
+            <span class="player-score-name" style="color: #ffffff;">${player.name}</span>
+          </div>
+          <span class="player-score-points" style="color: ${color.hex};">${player.score}</span>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // ========================================================================
+    // MODAL: WIE WAS ALS EERSTE GOED? (MET ONDERSTEUNING VOOR FOP-SOMMEN)
+    // ========================================================================
+
+    /**
+     * Toont het antwoord duidelijk op het speelscherm na afloop van de som / tijdens beoordeling.
+     */
+    function displayRevealedAnswer() {
+      const banner = document.getElementById('revealed-answer-banner');
+      const textEl = document.getElementById('revealed-answer-text');
+      const pillEl = document.getElementById('revealed-answer-pill');
+      const sum = gameState.activeSum;
+      if (!banner || !textEl || !pillEl || !sum) return;
+
+      textEl.textContent = `= ${sum.product}`;
+      if (sum.isOnTable) {
+        pillEl.className = 'revealed-answer-pill on-table';
+        pillEl.innerHTML = '✅ Ligt op tafel';
+      } else {
+        pillEl.className = 'revealed-answer-pill off-table';
+        pillEl.innerHTML = '⚠️ Niet op tafel (fop-som!)';
+      }
+      banner.style.display = 'inline-flex';
+    }
+
+    /**
+     * Opent het beoordelingsscherm.
+     * Toont altijd het antwoord, ondersteunt beheersing (+1 voor allebei bij niet meppen)
+     * en minpunten (-1 bij mis of verkeerd meppen). Roepen is verwijderd.
+     */
+    function openJudgeModal() {
+      // Pauzeer timers
+      clearPreCountdown();
+      gameState.isTimerPaused = true;
+      clearInterval(gameState.timerInterval);
+
+      // Laat het antwoord NA de som direct zien op het hoofdbord
+      displayRevealedAnswer();
+
+      const modal = document.getElementById('modal-judge');
+      const grid = document.getElementById('judge-players-grid');
+      const extraActions = document.getElementById('judge-extra-actions');
+      const eqEl = document.getElementById('judge-sum-equation');
+      const statusPill = document.getElementById('judge-table-status-pill');
+      const titleEl = document.getElementById('judge-title');
+      const subEl = document.getElementById('judge-subquestion');
+
+      if (!modal || !grid) return;
+
+      grid.innerHTML = '';
+      if (extraActions) extraActions.innerHTML = '';
+
+      const sum = gameState.activeSum;
+      const isOnTable = sum ? sum.isOnTable : true;
+
+      // Update de som badge in de beoordelingsmodal (altijd inclusief uitkomst!)
+      if (eqEl) {
+        eqEl.textContent = `${sum.text} = ${sum.product}`;
+      }
+
+      if (isOnTable) {
+        // --- 1. SOM LIGT WEL OP TAFEL ---
+        if (statusPill) {
+          statusPill.className = 'judge-status-pill on-table';
+          statusPill.innerHTML = '✅ Uitkomst ligt op tafel';
+        }
+        if (titleEl) titleEl.textContent = 'Wie was als eerste goed?';
+        if (subEl) subEl.textContent = 'Klik op de speler die als eerste het juiste antwoordkaartje heeft gemept (+1).';
+
+        // Genereer voor elke speler een grote knop voor winst (+1)
+        gameConfig.players.forEach(player => {
+          const color = COLOR_CONFIG[player.color] || COLOR_CONFIG.rood;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn-judge-player';
+          btn.style.borderColor = color.hex;
+          btn.style.background = `linear-gradient(135deg, ${color.light} 0%, #0f172a 100%)`;
+
+          btn.innerHTML = `
+            <span style="display:inline-block; width:22px; height:22px; border-radius:50%; background:${color.hex};"></span>
+            <span>${player.name} (+1)</span>
+          `;
+
+          btn.onclick = () => recordRoundWinner(player.id);
+          grid.appendChild(btn);
+        });
+
+        // Niemand had het goed knop
+        if (extraActions) {
+          let penaltyButtonsHtml = '';
+          gameConfig.players.forEach(player => {
+            const color = COLOR_CONFIG[player.color] || COLOR_CONFIG.rood;
+            penaltyButtonsHtml += `
+              <button type="button" class="btn-judge-penalty" onclick="recordPlayerPenalty(${player.id})">
+                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${color.hex};"></span>
+                <span>${player.name} verkeerd (-1)</span>
+              </button>
+            `;
+          });
+
+          extraActions.innerHTML = `
+            <button type="button" class="btn-nobody" onclick="recordRoundWinner(null)">
+              <span>❌ Niemand had het goed (0 punten)</span>
+            </button>
+
+            <!-- Minpunt sectie bij verkeerd of mis meppen -->
+            <div class="judge-penalty-section">
+              <div class="judge-section-heading">
+                <span>⚠️</span>
+                <span>Heeft iemand mis of verkeerd gemept? (Minpunt -1)</span>
+              </div>
+              <div class="penalty-buttons-grid">
+                ${penaltyButtonsHtml}
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        // --- 2. FOP-SOM: UITKOMST LIGT NIET OP TAFEL ---
+        if (statusPill) {
+          statusPill.className = 'judge-status-pill off-table';
+          statusPill.innerHTML = '⚠️ FOP-SOM! Uitkomst ligt NIET op tafel!';
+        }
+        if (titleEl) titleEl.textContent = '⚠️ Fop-som: Uitkomst ligt NIET op tafel!';
+        if (subEl) subEl.innerHTML = 'Het juiste antwoord is <strong>' + sum.product + '</strong> en ligt niet op tafel. Bij niet meppen krijgt <strong>iedereen een punt</strong>!';
+
+        // Hoofdoptie 1: Niet gemept -> Allebei / Iedereen een punt!
+        const restraintBtn = document.createElement('button');
+        restraintBtn.type = 'button';
+        restraintBtn.className = 'btn-judge-good-restraint';
+        restraintBtn.innerHTML = `
+          <span>🛡️</span>
+          <span>Goed opgelet! Niet gemept → Allebei een punt (+1)!</span>
+        `;
+        restraintBtn.onclick = () => recordBothPlayersPoint();
+        grid.appendChild(restraintBtn);
+
+        // Knoppen voor als iemand tóch heeft gemept op deze fop-som (fout gemept -> minpunt)
+        if (extraActions) {
+          let penaltyButtonsHtml = '';
+          gameConfig.players.forEach(player => {
+            const color = COLOR_CONFIG[player.color] || COLOR_CONFIG.rood;
+            penaltyButtonsHtml += `
+              <button type="button" class="btn-judge-penalty" onclick="recordPlayerPenalty(${player.id})">
+                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${color.hex};"></span>
+                <span>${player.name} mepte toch (-1)</span>
+              </button>
+            `;
+          });
+
+          extraActions.innerHTML = `
+            <div class="judge-penalty-section" style="margin-top: 0.75rem; border-top: 2px dashed #475569;">
+              <div class="judge-section-heading">
+                <span>❌</span>
+                <span>Heeft iemand tóch gemept? (Fout gemept: minpunt -1)</span>
+              </div>
+              <div class="penalty-buttons-grid">
+                ${penaltyButtonsHtml}
+              </div>
+            </div>
+
+            <button type="button" class="btn-nobody" style="margin-top: 0.85rem;" onclick="recordRoundWinner(null)">
+              <span>⏭️ Neutraal doorgaan (Geen punten veranderen)</span>
+            </button>
+          `;
+        }
+      }
+
+      modal.classList.add('active');
+    }
+
+    /**
+     * Sluit het beoordelingsscherm.
+     */
+    function closeJudgeModal() {
+      const modal = document.getElementById('modal-judge');
+      if (modal) modal.classList.remove('active');
+    }
+
+    /**
+     * Verwerkt een enkele winnaar van de ronde:
+     * - Winnaar krijgt +1 punt.
+     * - Scorebord werkt live bij.
+     * - Volgende som verschijnt direct.
+     * @param {number | null} winnerPlayerId - ID van de winnende speler of null voor niemand.
+     */
+    function recordRoundWinner(winnerPlayerId) {
+      if (winnerPlayerId !== null) {
+        const winner = gameConfig.players.find(p => p.id === winnerPlayerId);
+        if (winner) {
+          winner.score += 1;
+          soundPointAwarded();
+        }
+      }
+
+      renderLiveScoreboard();
+      nextRound();
+    }
+
+    /**
+     * Verwerkt beheersing bij fop-sommen:
+     * "Bij niet meppen, allebei een punt."
+     * Alle spelers krijgen +1 punt voor zelfbeheersing!
+     */
+    function recordBothPlayersPoint() {
+      gameConfig.players.forEach(p => {
+        p.score += 1;
+      });
+      soundBothPoints();
+      renderLiveScoreboard();
+      nextRound();
+    }
+
+    /**
+     * Verwerkt een minpunt voor mis-meppen of verkeerd meppen:
+     * "En een minpunt bij mis of verkeerd meppen."
+     * @param {number} playerId - ID van de speler die de fout maakte.
+     */
+    function recordPlayerPenalty(playerId) {
+      const player = gameConfig.players.find(p => p.id === playerId);
+      if (player) {
+        player.score = Math.max(0, player.score - 1);
+        soundPenalty();
+      }
+
+      renderLiveScoreboard();
+      nextRound();
+    }
+
+    // ========================================================================
+    // EINDSCHERM (NA 25 SOMMEN) & CONFETTI ANIMATIE
+    // ========================================================================
+
+    /**
+     * Toont het eindscherm met winnaar, gerangschikte scores en confetti.
+     */
+    function endGame() {
+      clearInterval(gameState.timerInterval);
+      showScreen('screen-gameover');
+      document.getElementById('btn-quit-game').style.display = 'none';
+
+      // Sorteer spelers op score van hoog naar laag
+      const rankedPlayers = [...gameConfig.players].sort((a, b) => b.score - a.score);
+      const highestScore = rankedPlayers[0].score;
+      const topWinners = rankedPlayers.filter(p => p.score === highestScore);
+
+      // Winnaarsaankondiging
+      const winnerAnnouncementEl = document.getElementById('winner-announcement-text');
+      if (topWinners.length === 1) {
+        winnerAnnouncementEl.innerHTML = `🏆 Winnaar: ${topWinners[0].name}!`;
+      } else if (highestScore > 0) {
+        const names = topWinners.map(w => w.name).join(' en ');
+        winnerAnnouncementEl.innerHTML = `🤝 Gelijkspel tussen ${names}!`;
+      } else {
+        winnerAnnouncementEl.innerHTML = `🏁 Goed geoefend allemaal!`;
+      }
+
+      // Bouw gerangschikte lijst
+      const listWrap = document.getElementById('final-score-list-wrap');
+      listWrap.innerHTML = '';
+
+      rankedPlayers.forEach((player, index) => {
+        const isWinner = (player.score === highestScore && highestScore > 0);
+        const color = COLOR_CONFIG[player.color] || COLOR_CONFIG.rood;
+
+        const item = document.createElement('div');
+        item.className = `final-score-item ${isWinner ? 'is-winner' : ''}`;
+        item.style.borderColor = isWinner ? '#f59e0b' : color.border;
+
+        item.innerHTML = `
+          <div style="display:flex; align-items:center;">
+            <span class="rank-badge">${index === 0 && highestScore > 0 ? '👑' : `${index + 1}`}</span>
+            <span style="color:${color.hex}; margin-right:0.6rem;">●</span>
+            <span>${player.name}</span>
+          </div>
+          <span style="font-size:1.8rem; font-weight:900; color:${color.hex};">${player.score} ${player.score === 1 ? 'punt' : 'punten'}</span>
+        `;
+        listWrap.appendChild(item);
+      });
+
+      // Geluid en confetti
+      soundFanfare();
+      startConfetti();
+    }
+
+    /**
+     * Start direct een nieuw potje met exact dezelfde instellingen.
+     */
+    function restartSameSettings() {
+      clearPreCountdown();
+      clearInterval(gameState.timerInterval);
+      stopConfetti();
+      startNewGameSession();
+    }
+
+    /**
+     * Gaat terug naar het instellingenscherm.
+     */
+    function goToSettings() {
+      clearPreCountdown();
+      clearInterval(gameState.timerInterval);
+      stopConfetti();
+      showScreen('screen-settings');
+    }
+
+    // ========================================================================
+    // STANDALONE HTML5 CANVAS CONFETTI (Zonder externe bibliotheken)
+    // ========================================================================
+    let confettiAnimationId = null;
+    let confettiParticles = [];
+
+    function startConfetti() {
+      const canvas = document.getElementById('confetti-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#ec4899', '#8b5cf6'];
+      confettiParticles = [];
+
+      for (let i = 0; i < 120; i++) {
+        confettiParticles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          w: Math.random() * 14 + 6,
+          h: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 4,
+          vy: Math.random() * 3 + 2,
+          rot: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 8
+        });
+      }
+
+      function renderFrame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        confettiParticles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.rotSpeed;
+
+          if (p.y > canvas.height) {
+            p.y = -20;
+            p.x = Math.random() * canvas.width;
+          }
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rot * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        });
+
+        confettiAnimationId = requestAnimationFrame(renderFrame);
+      }
+
+      cancelAnimationFrame(confettiAnimationId);
+      renderFrame();
+    }
+
+    function stopConfetti() {
+      cancelAnimationFrame(confettiAnimationId);
+      const canvas = document.getElementById('confetti-canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      const canvas = document.getElementById('confetti-canvas');
+      if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+    });
+
+    // ========================================================================
+    // EXTRA FUNCTIES: VOLLEDIG SCHERM, GELUID & DIGIBORD TOETSENBORD
+    // ========================================================================
+
+    // Geluidsschakelaar
+    document.getElementById('btn-toggle-sound').addEventListener('click', () => {
+      gameState.soundEnabled = !gameState.soundEnabled;
+      const soundIcon = document.getElementById('sound-icon');
+      const soundLabel = document.getElementById('sound-label');
+
+      if (gameState.soundEnabled) {
+        soundIcon.textContent = '🔊';
+        soundLabel.textContent = 'Geluid Aan';
+        getAudioContext();
+        soundNewSum();
+      } else {
+        soundIcon.textContent = '🔇';
+        soundLabel.textContent = 'Geluid Uit';
+      }
+    });
+
+    // Volledig scherm schakelaar voor digibord
+    document.getElementById('btn-toggle-fullscreen').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+    });
+
+    // Spel stoppen knop
+    document.getElementById('btn-quit-game').addEventListener('click', () => {
+      if (confirm('Wil je het huidige spel stoppen en terugkeren naar de instellingen?')) {
+        clearInterval(gameState.timerInterval);
+        goToSettings();
+      }
+    });
+
+    // Handige sneltoetsen voor de leerkracht
+    window.addEventListener('keydown', (e) => {
+      // Sluit kaarten modal met Escape
+      if (e.key === 'Escape') {
+        closeCardsModal();
+        return;
+      }
+
+      // Als de beoordelingsmodal actief is
+      const modal = document.getElementById('modal-judge');
+      if (modal && modal.classList.contains('active')) {
+        if (e.key === '1' && gameConfig.players[0]) {
+          recordRoundWinner(gameConfig.players[0].id);
+        } else if (e.key === '2' && gameConfig.players[1]) {
+          recordRoundWinner(gameConfig.players[1].id);
+        } else if (e.key === '3' && gameConfig.players[2]) {
+          recordRoundWinner(gameConfig.players[2].id);
+        } else if (e.key === '4' && gameConfig.players[3]) {
+          recordRoundWinner(gameConfig.players[3].id);
+        } else if (e.key === '0' || e.key.toLowerCase() === 'n' || e.key === ' ') {
+          recordRoundWinner(null);
+        }
+      } else {
+        // Tijdens het spel op de spatiebalk drukken = nu beoordelen
+        const gameScreen = document.getElementById('screen-game');
+        if (gameScreen && gameScreen.classList.contains('active') && e.key === ' ') {
+          openJudgeModal();
+        }
+      }
+    });
+
+    // ========================================================================
+    // INITIALISATIE BIJ LADEN
+    // ========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      renderPlayerInputs();
+      syncCardsSelection();
+      updateAnswerCardsDisplay();
+
+      // Luister naar wijzigingen in geselecteerde tafels
+      document.querySelectorAll('input[name="table"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          hideError();
+          syncCardsSelection();
+          updateAnswerCardsDisplay();
+        });
+      });
+
+      // Luister naar wijzigingen in vermenigvuldigers
+      document.querySelectorAll('input[name="multiplier-range"]').forEach(r => {
+        r.addEventListener('change', () => {
+          hideError();
+          syncCardsSelection();
+          updateAnswerCardsDisplay();
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>

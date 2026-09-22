@@ -1,0 +1,6 @@
+{
+  "name": "Vliegenmepper Tafelspel",
+  "description": "Digibord vliegenmepper-spel om de maaltafels in de klas te oefenen met fysieke meppers en kaarten.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
